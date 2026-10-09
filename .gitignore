@@ -1,0 +1,13 @@
+# Project exclude paths
+/loadbalancer-demo/server1/target/
+/loadbalancer-demo/server2/target/
+/loadbalancer-demo/server3/target/
+/loadbalancerReverse/target/
+
+# IDE files
+/.idea/
+
+# Generated NS-3 output
+/reverse-proxy-animation.xml
+/reverse-proxy-flow-monitor.xml
+/simulation-results.csv
