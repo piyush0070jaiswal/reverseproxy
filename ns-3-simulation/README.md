@@ -9,22 +9,21 @@ The topology has 20 clients, one load balancer, and three backends. Each point-t
 
 ## Requirements and setup
 
-Install NS-3 separately (3.39 or newer recommended). Open a terminal and change to the NS-3 installation root—the directory containing the `ns3` command and `scratch/` folder. Replace `/path/to/ns-3` and `/path/to/reverseproxy` with the locations on your computer:
+These commands use the current computer's paths: NS-3 is installed in `/home/piyush/Downloads/ns-3`, and this project is in `/home/piyush/Downloads/reverseproxy-main (2)`. Paste this copy command once to put the simulation in NS-3's `scratch/` folder:
 
 ```bash
-cd /path/to/ns-3
-cp "/path/to/reverseproxy/ns-3-simulation/scratch/reverse-proxy-load-balancer.cc" scratch/
+cp "/home/piyush/Downloads/reverseproxy-main (2)/ns-3-simulation/scratch/reverse-proxy-load-balancer.cc" "/home/piyush/Downloads/ns-3/scratch/"
 ```
 
-Run every `./ns3 run ...` command below from that same NS-3 directory, not from the repository directory.
+Every run command below includes `cd` into the NS-3 installation directory, so you can paste it from any current directory. If you installed or cloned either folder elsewhere, update those paths first.
 
 ## Standard simulation
 
 The default remains WRR with a 10 Mbps link rate and 2 ms channel delay:
 
 ```bash
-./ns3 run "scratch/reverse-proxy-load-balancer --algorithm=wrr --requests=100 --simulationTime=6"
-./ns3 run "scratch/reverse-proxy-load-balancer --algorithm=least --requests=100 --interval=0 --simulationTime=6"
+cd "/home/piyush/Downloads/ns-3" && ./ns3 run "scratch/reverse-proxy-load-balancer --algorithm=wrr --requests=100 --simulationTime=6"
+cd "/home/piyush/Downloads/ns-3" && ./ns3 run "scratch/reverse-proxy-load-balancer --algorithm=least --requests=100 --interval=0 --simulationTime=6"
 ```
 
 ## Network congestion and delay
@@ -32,7 +31,7 @@ The default remains WRR with a 10 Mbps link rate and 2 ms channel delay:
 Set `dataRate` and `delay` to vary link capacity and propagation delay. `packetSize` controls the echoed application payload, and `requests`/`interval` control offered load:
 
 ```bash
-./ns3 run "scratch/reverse-proxy-load-balancer --algorithm=wrr --requests=1000 --interval=0.001 --packetSize=1200 --dataRate=1Mbps --delay=30ms --simulationTime=8"
+cd "/home/piyush/Downloads/ns-3" && ./ns3 run "scratch/reverse-proxy-load-balancer --algorithm=wrr --requests=1000 --interval=0.001 --packetSize=1200 --dataRate=1Mbps --delay=30ms --simulationTime=8"
 ```
 
 These are applied to the point-to-point links in the topology. The terminal reports actual application response throughput, round-trip delay, completed requests, packet delivery ratio, and IP-level packet counts/loss from FlowMonitor.
@@ -42,7 +41,7 @@ These are applied to the point-to-point links in the topology. The terminal repo
 The example below drops packets in both directions on the Server-2 link from 2 s until 4 s, then restores the link:
 
 ```bash
-./ns3 run "scratch/reverse-proxy-load-balancer --algorithm=wrr --requests=400 --interval=0.02 --simulateFailure=1 --failureAt=2 --recoveryAt=4 --simulationTime=7"
+cd "/home/piyush/Downloads/ns-3" && ./ns3 run "scratch/reverse-proxy-load-balancer --algorithm=wrr --requests=400 --interval=0.02 --simulateFailure=1 --failureAt=2 --recoveryAt=4 --simulationTime=7"
 ```
 
 Options:
@@ -56,7 +55,7 @@ Options:
 Run both existing strategies with the same workload and settings, and print their measured throughput, average request/response RTT, and delivery ratio:
 
 ```bash
-./ns3 run "scratch/reverse-proxy-load-balancer --compare=1 --requests=400 --interval=0.02 --packetSize=1200 --dataRate=2Mbps --delay=10ms --simulationTime=7"
+cd "/home/piyush/Downloads/ns-3" && ./ns3 run "scratch/reverse-proxy-load-balancer --compare=1 --requests=400 --interval=0.02 --packetSize=1200 --dataRate=2Mbps --delay=10ms --simulationTime=7"
 ```
 
 Comparison mode writes separate animation files:
@@ -69,10 +68,15 @@ Comparison mode writes separate animation files:
 A normal single-strategy run writes `reverse-proxy-animation.xml` (or the path supplied with `animationFile`). Open it after the run:
 
 ```bash
-netanim reverse-proxy-animation.xml
+netanim "/home/piyush/Downloads/ns-3/reverse-proxy-animation.xml"
 ```
 
-NetAnim displays all clients, the load balancer, the backends, and packet movement. In a failure run, the selected backend changes color at the scheduled failure and restoration times. For comparison runs, open either strategy-specific XML file listed above.
+NetAnim displays all clients, the load balancer, the backends, and packet movement. In a failure run, the selected backend changes color at the scheduled failure and restoration times. For comparison runs, open either strategy-specific XML file:
+
+```bash
+netanim "/home/piyush/Downloads/ns-3/reverse-proxy-animation-wrr.xml"
+netanim "/home/piyush/Downloads/ns-3/reverse-proxy-animation-least.xml"
+```
 
 Install NetAnim on Arch/Omarchy:
 

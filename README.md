@@ -6,29 +6,37 @@ A Spring Boot reverse proxy with Weighted Round Robin (WRR) and Least Connection
 
 The NS-3 scenario supports configurable bandwidth and delay, backend link failure/recovery, terminal performance metrics, NetAnim output, and measured WRR-versus-least-connections comparison.
 
-### Quick start from a terminal
+### Copy and run from a terminal
 
-Install NS-3 separately. In the commands below, replace `/path/to/ns-3` with your NS-3 installation directory and `/path/to/reverseproxy` with this repository's directory. The NS-3 directory is the one containing the `ns3` command and `scratch/` folder.
-
-```bash
-cd /path/to/ns-3
-cp "/path/to/reverseproxy/ns-3-simulation/scratch/reverse-proxy-load-balancer.cc" scratch/
-./ns3 run "scratch/reverse-proxy-load-balancer --algorithm=wrr --requests=100 --simulationTime=6"
-```
-
-To run least-connections instead, use this command from the same NS-3 directory:
+These copy/paste commands use the current computer's folders. NS-3 is installed in `/home/piyush/Downloads/ns-3`, and this project is in `/home/piyush/Downloads/reverseproxy-main (2)`. Run the copy command once to place the simulation in NS-3's `scratch/` folder:
 
 ```bash
-./ns3 run "scratch/reverse-proxy-load-balancer --algorithm=least --requests=100 --interval=0 --simulationTime=6"
+cp "/home/piyush/Downloads/reverseproxy-main (2)/ns-3-simulation/scratch/reverse-proxy-load-balancer.cc" "/home/piyush/Downloads/ns-3/scratch/"
 ```
 
-The simulation prints results in the terminal and writes `reverse-proxy-animation.xml` in the NS-3 directory. Open it from there with:
+#### Run Weighted Round Robin (WRR)
+
+Paste this command to run WRR and print its measured results in the terminal:
 
 ```bash
-netanim reverse-proxy-animation.xml
+cd "/home/piyush/Downloads/ns-3" && ./ns3 run "scratch/reverse-proxy-load-balancer --algorithm=wrr --requests=100 --simulationTime=6"
 ```
 
-See [the full NS-3 instructions](ns-3-simulation/README.md) for congestion, failure/recovery, and comparison commands.
+#### Run Least Connections
+
+Paste this separate command to run the least-connections strategy:
+
+```bash
+cd "/home/piyush/Downloads/ns-3" && ./ns3 run "scratch/reverse-proxy-load-balancer --algorithm=least --requests=100 --interval=0 --simulationTime=6"
+```
+
+Each run writes `reverse-proxy-animation.xml` in the NS-3 folder. Open the most recently generated animation with:
+
+```bash
+netanim "/home/piyush/Downloads/ns-3/reverse-proxy-animation.xml"
+```
+
+See [the full NS-3 instructions](ns-3-simulation/README.md) for copy/paste commands for congestion, backend failure/recovery, and comparison runs. If your folders are in different locations, change the paths in the commands to match.
 
 ## More documentation
 
