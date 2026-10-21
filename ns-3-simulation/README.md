@@ -9,13 +9,14 @@ The topology has 20 clients, one load balancer, and three backends. Each point-t
 
 ## Requirements and setup
 
-Install NS-3 separately (3.39 or newer recommended). Copy the source into an NS-3 release's `scratch/` directory:
+Install NS-3 separately (3.39 or newer recommended). Open a terminal and change to the NS-3 installation root—the directory containing the `ns3` command and `scratch/` folder. Replace `/path/to/ns-3` and `/path/to/reverseproxy` with the locations on your computer:
 
 ```bash
-cp "/path/to/reverseproxy-main/ns-3-simulation/scratch/reverse-proxy-load-balancer.cc" scratch/
+cd /path/to/ns-3
+cp "/path/to/reverseproxy/ns-3-simulation/scratch/reverse-proxy-load-balancer.cc" scratch/
 ```
 
-Run the following commands from the NS-3 installation root.
+Run every `./ns3 run ...` command below from that same NS-3 directory, not from the repository directory.
 
 ## Standard simulation
 
