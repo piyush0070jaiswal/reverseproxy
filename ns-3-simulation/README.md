@@ -1,84 +1,79 @@
 # NS-3 Reverse Proxy Load Balancer Simulation
 
-This directory is separate from the Java Spring Boot project. It does not modify or replace the original load balancer code.
-
-The simulation models the same three backend servers and two algorithms used by the Java controller:
+This directory contains the NS-3 model for the existing three-backend reverse proxy. It preserves both supported strategies:
 
 - `wrr`: weighted round robin with weights `3, 2, 1`
 - `least`: least active connections
 
-The simulated topology is:
+The topology has 20 clients, one load balancer, and three backends. Each point-to-point link can use configurable bandwidth and propagation delay. Request/response packets are echoed through the selected backend and visualized in NetAnim.
 
-```text
-Client ---- Proxy / Load Balancer ---- SERVER-1
-                                  \--- SERVER-2
-                                   \-- SERVER-3
-```
+## Requirements and setup
 
-## Requirements
-
-Install NS-3 separately. The source is intended to be copied into an NS-3 release's `scratch/` directory. A recent NS-3 release such as 3.39 or newer is recommended.
-
-## Run
-
-From the root of an NS-3 installation, copy the simulation into `scratch/`:
+Install NS-3 separately (3.39 or newer recommended). Copy the source into an NS-3 release's `scratch/` directory:
 
 ```bash
-cp "/path/to/Reverse-Proxy-Load-Balancer-master/ns-3-simulation/scratch/reverse-proxy-load-balancer.cc" scratch/
+cp "/path/to/reverseproxy-main/ns-3-simulation/scratch/reverse-proxy-load-balancer.cc" scratch/
 ```
 
-The simulation creates **20 clients**, one load balancer, and three backend servers.
+Run the following commands from the NS-3 installation root.
 
-### Weighted Round Robin (WRR)
+## Standard simulation
 
-The weights are SERVER-1 = 3, SERVER-2 = 2, and SERVER-3 = 1:
+The default remains WRR with a 10 Mbps link rate and 2 ms channel delay:
 
 ```bash
 ./ns3 run "scratch/reverse-proxy-load-balancer --algorithm=wrr --requests=100 --simulationTime=6"
-```
-
-Expected output is close to:
-
-```text
-Clients: 20
-Requests completed: 100
-SERVER-1 handled: 50
-SERVER-2 handled: 33
-SERVER-3 handled: 17
-```
-
-### Least Connections (LC)
-
-Run the least-active-connections algorithm with simultaneous requests:
-
-```bash
 ./ns3 run "scratch/reverse-proxy-load-balancer --algorithm=least --requests=100 --interval=0 --simulationTime=6"
 ```
 
-Expected output is close to an even distribution:
+## Network congestion and delay
 
-```text
-Clients: 20
-Requests completed: 100
-SERVER-1 handled: 34
-SERVER-2 handled: 33
-SERVER-3 handled: 33
+Set `dataRate` and `delay` to vary link capacity and propagation delay. `packetSize` controls the echoed application payload, and `requests`/`interval` control offered load:
+
+```bash
+./ns3 run "scratch/reverse-proxy-load-balancer --algorithm=wrr --requests=1000 --interval=0.001 --packetSize=1200 --dataRate=1Mbps --delay=30ms --simulationTime=8"
 ```
 
-The exact counts can vary slightly depending on event timing.
+These are applied to the point-to-point links in the topology. The terminal reports actual application response throughput, round-trip delay, completed requests, packet delivery ratio, and IP-level packet counts/loss from FlowMonitor.
 
-## View the animation with NetAnim
+## Backend link failure and recovery
 
-Each simulation creates or updates `reverse-proxy-animation.xml` in the NS-3 root directory.
-Run the simulation first, then open the XML file:
+The example below drops packets in both directions on the Server-2 link from 2 s until 4 s, then restores the link:
+
+```bash
+./ns3 run "scratch/reverse-proxy-load-balancer --algorithm=wrr --requests=400 --interval=0.02 --simulateFailure=1 --failureAt=2 --recoveryAt=4 --simulationTime=7"
+```
+
+Options:
+
+- `failureBackend=1|2|3` selects the backend (default: `2`).
+- `failureAt` and `recoveryAt` specify event times in seconds.
+- Failure and restoration are printed in the terminal and shown by changing the selected server's NetAnim color. Lost requests are not retried; recovery time is measured from restoration to the first successfully returned response observed after restoration. It is reported as unavailable if no response arrives before the simulation ends.
+
+## Compare load-balancing strategies
+
+Run both existing strategies with the same workload and settings, and print their measured throughput, average request/response RTT, and delivery ratio:
+
+```bash
+./ns3 run "scratch/reverse-proxy-load-balancer --compare=1 --requests=400 --interval=0.02 --packetSize=1200 --dataRate=2Mbps --delay=10ms --simulationTime=7"
+```
+
+Comparison mode writes separate animation files:
+
+- `reverse-proxy-animation-wrr.xml`
+- `reverse-proxy-animation-least.xml`
+
+## View topology and packet movement in NetAnim
+
+A normal single-strategy run writes `reverse-proxy-animation.xml` (or the path supplied with `animationFile`). Open it after the run:
 
 ```bash
 netanim reverse-proxy-animation.xml
 ```
 
-In NetAnim, click **Play**. The window shows Client-1 through Client-20, the load balancer, and the three backend servers. Run the WRR or LC command again before opening NetAnim to view that algorithm's latest animation.
+NetAnim displays all clients, the load balancer, the backends, and packet movement. In a failure run, the selected backend changes color at the scheduled failure and restoration times. For comparison runs, open either strategy-specific XML file listed above.
 
-On Arch/Omarchy, install NetAnim from the AUR:
+Install NetAnim on Arch/Omarchy:
 
 ```bash
 yay -S netanim
@@ -91,8 +86,13 @@ sudo apt update
 sudo apt install netanim
 ```
 
-The final terminal output reports completed requests and the number forwarded to each backend. NetAnim shows the packet movement; it does not replace the terminal statistics.
+## Metric definitions
 
-## Important distinction
+- **Application throughput:** successfully returned response payload bits divided by the client measurement interval.
+- **Average delay:** mean client-observed request-to-response round-trip time for completed requests.
+- **Delivery ratio:** completed request/response transactions divided by requests actually sent.
+- **Request/response loss:** sent transactions that did not complete before simulation end.
+- **IP packet loss:** FlowMonitor's lost IP packets across the simulated flows, reported alongside transmitted/received counts.
+- **Recovery time:** time from backend-link restoration until the first successful response received afterward.
 
-NS-3 simulates the network traffic and load-balancing decisions. It does not start the Java Spring Boot services, and it does not alter the Java project. The original Java demo can still be run separately using its existing Maven instructions.
+The Java Spring Boot application is separate; this simulation does not start or modify it.

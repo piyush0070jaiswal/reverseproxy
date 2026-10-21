@@ -9,5 +9,6 @@
 
 # Generated NS-3 output
 /reverse-proxy-animation.xml
+/reverse-proxy-animation-*.xml
 /reverse-proxy-flow-monitor.xml
 /simulation-results.csv
