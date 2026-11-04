@@ -2,6 +2,34 @@
 
 A Spring Boot reverse proxy with Weighted Round Robin (WRR) and Least Connections (LC), plus an NS-3 simulation of 20 clients, one load balancer, and three backends.
 
+## Java application: Docker and deployment
+
+Dockerfiles and a four-service Compose configuration are available for the existing Java proxy and backends. This does **not** create a new website or a public deployment. The existing `/stats` page is preserved. No Render URL is available until the services are actually deployed and verified.
+
+The four Docker images have been built and the local `sto-demo` stack has been verified, including WRR, concurrent least-connections, and backend stop/restart recovery. The following commands reproduce that setup on port **18080** without interfering with your original Java proxy on port 8080:
+
+```bash
+cd "/home/piyush/Downloads/reverseproxy_final"
+docker compose config --quiet && sudo docker compose -p sto-demo build && sudo env PROXY_PORT=18080 docker compose -p sto-demo up -d --wait --wait-timeout 240
+```
+
+This computer requires administrator-authorized Docker access. Enter your password only in your own terminal or the system authentication dialog, never in chat. These commands do not change Docker group membership or socket permissions. If your Docker setup already allows unprivileged access, omit `sudo`.
+
+After the containers are healthy, test the proxy:
+
+```bash
+curl --fail http://127.0.0.1:18080/health
+curl --fail --max-time 120 "http://127.0.0.1:18080/hello?algorithm=wrr"
+curl --fail --max-time 120 "http://127.0.0.1:18080/hello?algorithm=least"
+```
+
+View the existing statistics at **http://127.0.0.1:18080/stats**. Backend responses intentionally take about five seconds. A sequential least-connections request does not demonstrate load distribution; use the concurrent test in the guide.
+
+See [the deployment guide](docs/deployment.md) for separate WRR/least-connections checks, environment variables, logs, shutdown, Render Free settings, limitations, and current validation status. This is a loopback-only local deployment, not a public Render URL. Do not make the Docker socket world-writable.
+
+- **Render Free:** deploy [`render-backends.yaml`](render-backends.yaml) first, then [`render.yaml`](render.yaml) with the three actual public HTTPS backend origins. These deploy only the existing Java services. See the guide for the two-Blueprint workflow. Files are prepared, but no Render deployment or public URL has been verified.
+- **Local Kubernetes:** separate [Minikube manifests and instructions](k8s/README.md) are prepared for a dedicated profile and loopback port **18081**. They have not been executed against a cluster.
+
 ## NS-3 simulation
 
 The NS-3 scenario supports configurable bandwidth and delay, backend link failure/recovery, terminal performance metrics, NetAnim output, and measured WRR-versus-least-connections comparison.

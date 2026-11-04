@@ -1,0 +1,19 @@
+# Allow only module build inputs; exclude target, VCS, and unrelated files.
+**
+!pom.xml
+!src/
+!src/**
+!Dockerfile
+!.dockerignore
+
+# Keep secrets and generated files out even beneath src/.
+**/target
+**/.git
+**/.env
+**/.env.*
+**/secrets
+**/*.pem
+**/*.key
+**/*.p12
+**/*.pfx
+**/*.jks

@@ -4,6 +4,11 @@
 /loadbalancer-demo/server3/target/
 /loadbalancerReverse/target/
 
+# Local deployment configuration and credentials
+.env
+.env.*
+!.env.example
+
 # IDE files
 /.idea/
 

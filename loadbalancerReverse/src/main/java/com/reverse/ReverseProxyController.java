@@ -1,27 +1,56 @@
 package com.reverse;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientException;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.net.URI;
+import java.time.Duration;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @RestController
 public class ReverseProxyController {
 
-        private final WebClient webClient = WebClient.create();
+    private final WebClient webClient = WebClient.create();
+    private final String[] servers;
+    private final Duration requestTimeout;
 
-        private final String[] servers = {
-            "http://localhost:8081",
-            "http://localhost:8082",
-            "http://localhost:8083"
-        };
+    // Weights used for Weighted Round Robin
+    private final int[] weights = {3, 2, 1};
 
-        // Weights used for Weighted Round Robin
-        private final int[] weights = {
-            3, 2, 1
+    public ReverseProxyController(
+            @Value("${loadbalancer.backend-1-url}") String backend1Url,
+            @Value("${loadbalancer.backend-2-url}") String backend2Url,
+            @Value("${loadbalancer.backend-3-url}") String backend3Url,
+            @Value("${loadbalancer.request-timeout-ms}") long requestTimeoutMillis) {
+        if (requestTimeoutMillis <= 0) {
+            throw new IllegalArgumentException("Upstream timeout must be greater than zero");
+        }
+        servers = new String[]{
+                validateBackendUrl(backend1Url),
+                validateBackendUrl(backend2Url),
+                validateBackendUrl(backend3Url)
         };
+        requestTimeout = Duration.ofMillis(requestTimeoutMillis);
+    }
+
+    private static String validateBackendUrl(String value) {
+        String url = value.trim();
+        URI uri = URI.create(url);
+        if (!("http".equalsIgnoreCase(uri.getScheme()) ||
+                "https".equalsIgnoreCase(uri.getScheme())) ||
+                uri.getHost() == null || uri.getUserInfo() != null ||
+                uri.getQuery() != null || uri.getFragment() != null) {
+            throw new IllegalArgumentException("Backend URLs must be HTTP(S) base URLs without credentials, queries or fragments");
+        }
+        return url.replaceFirst("/+$", "");
+    }
 
     // Total requests received by reverse proxy
     private final AtomicInteger totalRequests = new AtomicInteger(0);
@@ -55,20 +84,18 @@ public class ReverseProxyController {
         int requestNumber = totalRequests.incrementAndGet();
 
         int selectedServer;
-
-        if (algorithm.equalsIgnoreCase("least")) {
-            selectedServer = selectLeastConnectionServer();
-        } else {
-            selectedServer = selectWeightedServer();
+        int active;
+        // Reserve the selected backend before another request makes its selection.
+        synchronized (this) {
+            if (algorithm.equalsIgnoreCase("least")) {
+                selectedServer = selectLeastConnectionServer();
+            } else {
+                selectedServer = selectWeightedServer();
+            }
+            active = activeConnections[selectedServer].incrementAndGet();
         }
 
-        // Increase request count
-        int serverRequestNumber =
-                serverRequests[selectedServer].incrementAndGet();
-
-        // Increase active connection count
-        int active =
-                activeConnections[selectedServer].incrementAndGet();
+        int serverRequestNumber = serverRequests[selectedServer].incrementAndGet();
 
         String server = servers[selectedServer];
 
@@ -86,6 +113,11 @@ public class ReverseProxyController {
                     .uri(server + "/hello")
                     .retrieve()
                     .bodyToMono(String.class)
+                    .timeout(requestTimeout)
+                    .onErrorMap(TimeoutException.class, error -> new ResponseStatusException(
+                            HttpStatus.GATEWAY_TIMEOUT, "Backend request timed out", error))
+                    .onErrorMap(WebClientException.class, error -> new ResponseStatusException(
+                            HttpStatus.BAD_GATEWAY, "Backend request failed", error))
                     .block();
         } finally {
             int remaining = activeConnections[selectedServer].decrementAndGet();
@@ -124,7 +156,7 @@ public class ReverseProxyController {
             position -= weights[i];
         }
 
-        weightedIndex++;
+        weightedIndex = (weightedIndex + 1) % totalWeight;
 
         return selectedServer;
     }
@@ -159,6 +191,11 @@ public class ReverseProxyController {
     // =========================================================
     // STATISTICS
     // =========================================================
+
+    @GetMapping("/health")
+    public String health() {
+        return "loadbalancerReverse is UP";
+    }
 
     @GetMapping("/stats")
     public String stats() {
@@ -227,7 +264,7 @@ public class ReverseProxyController {
 
                         <div class="server">
                             <span class="server-name">
-                                SERVER-1 (8081)
+                                SERVER-1
                             </span>
 
                             <span>
@@ -238,7 +275,7 @@ public class ReverseProxyController {
 
                         <div class="server">
                             <span class="server-name">
-                                SERVER-2 (8082)
+                                SERVER-2
                             </span>
 
                             <span>
@@ -249,7 +286,7 @@ public class ReverseProxyController {
 
                         <div class="server">
                             <span class="server-name">
-                                SERVER-3 (8083)
+                                SERVER-3
                             </span>
 
                             <span>

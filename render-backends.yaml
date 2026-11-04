@@ -1,0 +1,43 @@
+# Deploy this Blueprint first, then verify each service's actual public /health URL.
+services:
+  - type: web
+    name: reverseproxy-backend1
+    runtime: docker
+    plan: free
+    autoDeployTrigger: 'off'
+    dockerfilePath: ./loadbalancer-demo/server1/Dockerfile
+    dockerContext: ./loadbalancer-demo/server1
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: '10000'
+      - key: SERVER_ADDRESS
+        value: 0.0.0.0
+
+  - type: web
+    name: reverseproxy-backend2
+    runtime: docker
+    plan: free
+    autoDeployTrigger: 'off'
+    dockerfilePath: ./loadbalancer-demo/server2/Dockerfile
+    dockerContext: ./loadbalancer-demo/server2
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: '10000'
+      - key: SERVER_ADDRESS
+        value: 0.0.0.0
+
+  - type: web
+    name: reverseproxy-backend3
+    runtime: docker
+    plan: free
+    autoDeployTrigger: 'off'
+    dockerfilePath: ./loadbalancer-demo/server3/Dockerfile
+    dockerContext: ./loadbalancer-demo/server3
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: '10000'
+      - key: SERVER_ADDRESS
+        value: 0.0.0.0

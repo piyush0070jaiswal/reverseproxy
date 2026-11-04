@@ -1,0 +1,24 @@
+# Deploy only after render-backends.yaml is live and its public URLs are verified.
+# Supply actual HTTPS backend origins in Render's initial Blueprint prompts.
+services:
+  - type: web
+    name: reverseproxy-proxy
+    runtime: docker
+    plan: free
+    autoDeployTrigger: 'off'
+    dockerfilePath: ./loadbalancerReverse/Dockerfile
+    dockerContext: ./loadbalancerReverse
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: '10000'
+      - key: SERVER_ADDRESS
+        value: 0.0.0.0
+      - key: UPSTREAM_TIMEOUT_MS
+        value: '90000'
+      - key: BACKEND_1_URL
+        sync: false
+      - key: BACKEND_2_URL
+        sync: false
+      - key: BACKEND_3_URL
+        sync: false
