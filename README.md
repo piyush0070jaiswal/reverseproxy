@@ -2,6 +2,14 @@
 
 A Spring Boot reverse proxy with Weighted Round Robin (WRR) and Least Connections (LC), plus an NS-3 simulation of 20 clients, one load balancer, and three backends.
 
+## Demo Guide: start here
+
+Follow the [step-by-step demo guide](docs/demo-guide.md) for links, terminal commands, expected results, and the workflow.
+
+**Demo order:** Wake all three backends → Public `/hello` → WRR (3:2:1) → Concurrent least connections → Original `/stats` → Separate local Kubernetes demo.
+
+The guide includes troubleshooting for Render Free cold starts. No new website or UI was created.
+
 ## Java application: Docker and deployment
 
 Dockerfiles and a four-service Compose configuration are available for the existing Java proxy and backends. No new website or UI was created; the existing `/stats` page is preserved. The application is deployed and verified at **https://reverseproxy-proxy.onrender.com/hello**, with original statistics at **https://reverseproxy-proxy.onrender.com/stats**. Render Free backends may need to wake up before requests succeed.
