@@ -2,7 +2,7 @@
 
 A Spring Boot reverse proxy with Weighted Round Robin (WRR) and Least Connections (LC), plus an NS-3 simulation of 20 clients, one load balancer, and three backends.
 
-## Run the application: open these links in order
+## Run the application
 
 ### 1. Wake the three backends 
 
