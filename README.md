@@ -4,7 +4,7 @@ A Spring Boot reverse proxy with Weighted Round Robin (WRR) and Least Connection
 
 ## Run the application: open these links in order
 
-### 1. Wake the three backends first
+### 1. Wake the three backends 
 
 Open these links in separate tabs and wait until all three respond:
 
@@ -12,7 +12,6 @@ Open these links in separate tabs and wait until all three respond:
 - <https://reverseproxy-backend2.onrender.com/health> — expected: `SERVER-2 is UP`
 - <https://reverseproxy-backend3.onrender.com/health> — expected: `SERVER-3 is UP`
 
-**Allow 1–2 minutes for Render Free cold starts. Do not test the proxy until all three checks pass.**
 
 ### 2. Open the public reverse proxy
 
