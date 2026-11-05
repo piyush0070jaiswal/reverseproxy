@@ -2,13 +2,49 @@
 
 A Spring Boot reverse proxy with Weighted Round Robin (WRR) and Least Connections (LC), plus an NS-3 simulation of 20 clients, one load balancer, and three backends.
 
-## Demo Guide: start here
+## Run the application: open these links in order
 
-Follow the [step-by-step demo guide](docs/demo-guide.md) for links, terminal commands, expected results, and the workflow.
+### 1. Wake the three backends first
 
-**Demo order:** Wake all three backends → Public `/hello` → WRR (3:2:1) → Concurrent least connections → Original `/stats` → Separate local Kubernetes demo.
+Open these links in separate tabs and wait until all three respond:
 
-The guide includes troubleshooting for Render Free cold starts. No new website or UI was created.
+- <https://reverseproxy-backend1.onrender.com/health> — expected: `SERVER-1 is UP`
+- <https://reverseproxy-backend2.onrender.com/health> — expected: `SERVER-2 is UP`
+- <https://reverseproxy-backend3.onrender.com/health> — expected: `SERVER-3 is UP`
+
+**Allow 1–2 minutes for Render Free cold starts. Do not test the proxy until all three checks pass.**
+
+### 2. Open the public reverse proxy
+
+<https://reverseproxy-proxy.onrender.com/hello>
+
+This is the public entry point. The proxy selects a backend and returns its response to the client. A response looks like:
+
+```text
+Hello from SERVER-1 running on port 10000
+```
+
+The selected server can differ. Backend responses intentionally take about five seconds.
+
+### 3. Test Weighted Round Robin
+
+<https://reverseproxy-proxy.onrender.com/hello?algorithm=wrr>
+
+Count the first response, then refresh five more times, waiting for each response: **six requests total**. With no competing WRR traffic or proxy restarts, SERVER-1 receives three, SERVER-2 receives two, and SERVER-3 receives one. The starting position depends on previous requests.
+
+### 4. Test Least Connections
+
+<https://reverseproxy-proxy.onrender.com/hello?algorithm=least>
+
+The proxy selects the backend with the fewest active requests. Use the concurrent-request command in the [demo guide](docs/demo-guide.md#4-test-least-connections) to demonstrate distribution; sequential browser refreshes may find every backend idle.
+
+### 5. View the original statistics
+
+<https://reverseproxy-proxy.onrender.com/stats>
+
+View total requests, requests assigned to each backend, and current active requests. Counts include previous traffic and reset when the proxy restarts.
+
+For terminal commands, troubleshooting, and the separate local Kubernetes workflow, see the [full demo guide](docs/demo-guide.md). No new website or UI was created.
 
 ## Java application: Docker and deployment
 
