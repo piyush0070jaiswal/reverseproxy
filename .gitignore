@@ -5,6 +5,7 @@
 /loadbalancerReverse/target/
 
 # Local deployment configuration and credentials
+/.deployment-local/
 .env
 .env.*
 !.env.example

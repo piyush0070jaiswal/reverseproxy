@@ -6,6 +6,64 @@ root (`reverseproxy_final/`), unless a section says otherwise. Commands use lite
 names; no secrets, registry credentials, shell substitutions, or environment setup
 are required.
 
+## Verified setup on this computer
+
+The local demonstration has now passed against a real Minikube cluster: all four
+Deployments became ready, backend Service DNS/health worked, WRR produced 3:2:1,
+six concurrent least-connections requests produced 2:2:2 in this run, and the
+original `/stats` showed zero active reservations afterwards. Deleting backend1's
+pod caused Kubernetes to create a different ready pod; proxy routing to SERVER-1
+then succeeded. This is pod replacement, not automatic request-level failover.
+
+Minikube **v1.39.0** and kubectl **v1.37.2** were downloaded from official release
+URLs and SHA-256 checked. The cluster runs Kubernetes **v1.37.2**, Docker runtime,
+4 CPUs, and 4096 MiB. Minikube warned that this patch is newer than its bundled
+version list but found it upstream and successfully started it. Its primary base
+image registry failed; its official Docker Hub fallback succeeded. Access to
+`registry.k8s.io` inside the node also warned during setup; preloaded Kubernetes
+images and the existing application images allowed startup without new pulls.
+
+Tools, caches, and kubeconfig/certificates live in ignored **`.deployment-local/`**,
+not your normal global Kubernetes configuration. Do not commit or share this
+folder. No system packages, permanent Docker group membership, or socket
+permissions were changed. Docker-dependent operations use a system authentication
+dialog and then execute as your user with temporary Docker-group access.
+
+The four previously built and verified images (`sto-demo-proxy:latest` and
+`sto-demo-backend1:latest` through `sto-demo-backend3:latest`) were loaded into
+the node and tagged with the manifest's `:local` names;
+no application image rebuild or application-code change was necessary. On a fresh
+machine, use the full build workflow below instead.
+
+The cluster is left running. The temporary validation port-forward was stopped.
+From this checkout, inspect it and reopen the demo in your own terminal:
+
+```sh
+sh k8s/local-tools.sh kubectl --context=reverseproxy-demo --namespace=reverseproxy-demo get deployments,pods,services
+sh k8s/local-tools.sh kubectl --context=reverseproxy-demo --namespace=reverseproxy-demo port-forward --address=127.0.0.1 service/proxy 18081:8080
+```
+
+Keep the second command running while viewing <http://127.0.0.1:18081/hello> or
+<http://127.0.0.1:18081/stats>. Ctrl-C stops only the port-forward. These URLs work
+only on this computer and are separate from Render and Compose.
+
+To stop the node and release CPU/RAM without deleting the demo:
+
+```sh
+sh k8s/local-tools.sh minikube stop --profile=reverseproxy-demo
+```
+
+To restart the same node, preserving isolation and leaving the global context alone:
+
+```sh
+sh k8s/local-tools.sh minikube start --profile=reverseproxy-demo --driver=docker --container-runtime=docker --kubernetes-version=v1.37.2 --cpus=4 --memory=4096 --keep-context --wait=all --wait-timeout=5m
+```
+
+The helper only selects local tools/credentials and handles temporary Docker
+access; pass `--context=reverseproxy-demo` / `--profile=reverseproxy-demo`
+explicitly as shown. It does not install tools or change resources by itself.
+The remaining sections describe a fresh installation using standard tools on PATH.
+
 ## Layout and constraints
 
 | Manifest | Workload | Existing Docker build context | Java | Local image |
@@ -325,8 +383,9 @@ At authoring time, PyYAML parsing and offline assertions covering resource
 structure, selectors, image tags/pull policy, environment, probes, resource
 budgets, and runtime security passed for the nine objects in five YAML files.
 This does not substitute for API-server validation or runtime tests.
-**No cluster run, image build, rollout, or HTTP smoke test was performed**:
-`kubectl` and `minikube` were absent, and `docker info` was denied access to the
-Docker socket (privileged access/access setup would be required). No tools were
-installed and no sudo commands were run. Run sections 1–6 yourself to validate
-on a live cluster; `kubectl apply` then performs API-server validation.
+Subsequent live verification succeeded using the isolated setup documented at
+the top: API-server application, four ready Deployments, Service DNS/health,
+WRR, concurrent least connections, original stats, and backend pod replacement.
+Existing verified Compose images were imported rather than rebuilt. Runtime
+checks used a temporary loopback-only port-forward, which was terminated after
+testing. Render resources and the Compose stack were not modified.
