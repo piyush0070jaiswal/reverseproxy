@@ -115,3 +115,8 @@ See [the full NS-3 instructions](ns-3-simulation/README.md) for copy/paste comma
 - [Spring Boot demo](loadbalancer-demo/README.md)
 
 GitHub: https://github.com/piyush0070jaiswal/reverseproxy
+
+Show the application working
+Open these links in your browser:
+Docker proxy: http://127.0.0.1:18080/hello
+Original statistics: http://127.0.0.1:18080/stats
